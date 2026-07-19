@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project Issue Pareto Analyzer</title>
+
+  <style>
+    :root {
+      --navy: #183153;
+      --blue: #2f75b5;
+      --light-blue: #d9eaf7;
+      --orange: #ed7d31;
+      --green: #548235;
+      --red: #c00000;
+      --gray: #667085;
+      --light-gray: #f4f6f8;
+      --border: #d0d5dd;
+      --white: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--light-gray);
+      color: #1d2939;
+      font-family: Arial, Helvetica, sans-serif;
+      line-height: 1.4;
+    }
+
+    header {
+      background: var(--navy);
+      color: var(--white);
+      padding: 22px 28px;
+    }
+
+    header h1 {
+      margin: 0 0 6px;
+      font-size: 26px;
+    }
+
+    header p {
+      margin: 0;
+      color: #d9e4f2;
+    }
+
+    main {
+      max-width: 1300px;
+      margin: 24px auto;
+      padding: 0 18px 40px;
+    }
+
+    .card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(16, 24, 40, 0.06);
+      margin-bottom: 20px;
+      padding: 20px;
+    }
+
+    .card h2 {
+      margin: 0 0 14px;
+      color: var(--navy);
+      font-size: 20px;
+    }
+
+    .card h3 {
+      color: var(--navy);
+    }
+
+    .instructions {
+      color: var(--gray);
+      margin-top: -7px;
+    }
+
+    .control-grid {
+      display: grid;
+      grid-template-columns: minmax(220px, 2fr) minmax(160px, 1fr) auto;
+      gap: 16px;
+      align-items: end;
+    }
+
+    label {
+      display: block;
+      color: #344054;
+      font-size: 13px;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    select,
+    input,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      background: var(--white);
+      color: #101828;
+      font: inherit;
+      padding: 8px 9px;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(47, 117, 181, 0.13);
+      outline: none;
+    }
+
+    textarea {
+      min-height: 58px;
+      resize: vertical;
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      padding: 9px 14px;
+    }
+
+    .primary-button {
+      background: var(--blue);
+      color: var(--white);
+    }
+
+    .secondary-button {
+      background: #e8edf3;
+      color: var(--navy);
+    }
+
+    .danger-button {
+      background: #fee4e2;
+      color: #b42318;
+      padding: 6px 9px;
+    }
+
+    button:hover {
+      filter: brightness(0.96);
+    }
+
+    .table-container {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 900px;
+    }
+
+    th {
+      background: var(--navy);
+      color: var(--white);
+      font-size: 13px;
+      padding: 10px;
+      text-align: left;
+    }
+
+    td {
+      border-bottom: 1px solid #e4e7ec;
+      padding: 7px;
+      vertical-align: middle;
+    }
+
+    tbody tr:hover {
+      background: #f8fafc;
+    }
+
+    td input,
+    td select,
+    td textarea {
+      min-width: 95px;
+    }
+
+    .category-input {
+      min-width: 190px;
+    }
+
+    .phase-input {
+      min-width: 130px;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(150px, 1fr));
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .summary-box {
+      background: #f8fafc;
+      border-left: 5px solid var(--blue);
+      border-radius: 5px;
+      padding: 14px;
+    }
+
+    .summary-box.vital {
+      border-left-color: var(--orange);
+    }
+
+    .summary-box.threshold {
+      border-left-color: var(--green);
+    }
+
+    .summary-label {
+      color: var(--gray);
+      font-size: 12px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+
+    .summary-value {
+      color: var(--navy);
+      font-size: 24px;
+      font-weight: bold;
+      margin-top: 4px;
+    }
+
+    .chart-container {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      overflow-x: auto;
+      padding: 8px;
+    }
+
+    #paretoChart {
+      display: block;
+      height: auto;
+      min-width: 800px;
+      width: 100%;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+      margin-top: 10px;
+    }
+
+    .legend-item {
+      align-items: center;
+      display: flex;
+      font-size: 13px;
+      gap: 6px;
+    }
+
+    .legend-box {
+      display: inline-block;
+      height: 13px;
+      width: 18px;
+    }
+
+    .legend-line {
+      display: inline-block;
+      height: 3px;
+      width: 24px;
+    }
+
+    .interpretation {
+      background: #eef6fc;
+      border: 1px solid #b7d7ef;
+      border-radius: 6px;
+      color: #17324d;
+      margin-top: 18px;
+      padding: 14px;
+    }
+
+    .warning {
+      background: #fff8e6;
+      border: 1px solid #f5d58a;
+      border-radius: 6px;
+      color: #694d00;
+      margin-top: 12px;
+      padding: 12px;
+    }
+
+    .results-table .vital-row {
+      background: #fff2e8;
+      font-weight: bold;
+    }
+
+    .badge {
+      border-radius: 12px;
+      display: inline-block;
+      font-size: 11px;
+      font-weight: bold;
+      padding: 3px 8px;
+    }
+
+    .vital-badge {
+      background: #ffdfc7;
+      color: #943d00;
+    }
+
+    .secondary-badge {
+      background: #eaecf0;
+      color: #475467;
+    }
+
+    .action-table textarea {
+      min-width: 220px;
+    }
+
+    .empty-message {
+      color: var(--gray);
+      padding: 20px;
+      text-align: center;
+    }
+
+    footer {
+      color: var(--gray);
+      font-size: 12px;
+      padding: 5px 0;
+      text-align: center;
+    }
+
+    @media (max-width: 850px) {
+      .control-grid,
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media print {
+      body {
+        background: white;
+      }
+
+      header {
+        background: white;
+        color: black;
+        padding-left: 0;
+      }
+
+      header p {
+        color: #444;
+      }
+
+      main {
+        margin: 0;
+        max-width: none;
+      }
+
+      .card {
+        box-shadow: none;
+      }
+
+      button,
+      .data-entry-card {
+        display: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Project Issue Pareto Analyzer</h1>
+    <p>Use the Pareto Principle to identify the vital few causes creating most project impact.</p>
+  </header>
+
+  <main>
+    <section class="card data-entry-card">
+      <h2>1. Define the analysis</h2>
+
+      <div class="control-grid">
+        <div>
+          <label for="problemStatement">Project problem statement</label>
+          <input
+            id="problemStatement"
+            type="text"
+            value="What is causing the greatest amount of project schedule delay?"
+          />
+        </div>
+
+        <div>
+          <label for="metricSelector">Analysis metric</label>
+          <select id="metricSelector">
+            <option value="frequency">Frequency of occurrence</option>
+            <option value="delay" selected>Schedule delay hours</option>
+            <option value="cost">Cost impact</option>
+            <option value="severity">Severity</option>
+            <option value="weighted">Weighted impact: frequency × severity</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="thresholdInput">Pareto threshold (%)</label>
+          <input
+            id="thresholdInput"
+            type="number"
+            min="1"
+            max="100"
+            step="1"
+            value="80"
+          />
+        </div>
+      </div>
+    </section>
+
+    <section class="card data-entry-card">
+      <h2>2. Enter project issue data</h2>
+      <p class="instructions">
+        Enter one summarized project issue category per row. Numeric values must be zero or greater.
+      </p>
+
+      <div class="table-container">
+        <table id="dataTable">
+          <thead>
+            <tr>
+              <th>Issue category</th>
+              <th>Project phase</th>
+              <th>Frequency</th>
+              <th>Delay hours</th>
+              <th>Cost impact ($)</th>
+              <th>Severity (1–5)</th>
+              <th>Delete</th>
+            </tr>
+          </thead>
+          <tbody id="dataBody"></tbody>
+        </table>
+      </div>
+
+      <div class="button-row" style="margin-top: 14px;">
+        <button class="primary-button" id="addRowButton">+ Add issue category</button>
+        <button class="secondary-button" id="resetButton">Restore sample data</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>3. Pareto analysis</h2>
+
+      <div class="summary-grid">
+        <div class="summary-box">
+          <div class="summary-label">Total measured impact</div>
+          <div class="summary-value" id="totalImpact">0</div>
+        </div>
+
+        <div class="summary-box">
+          <div class="summary-label">Issue categories</div>
+          <div class="summary-value" id="categoryCount">0</div>
+        </div>
+
+        <div class="summary-box vital">
+          <div class="summary-label">Vital-few categories</div>
+          <div class="summary-value" id="vitalCount">0</div>
+        </div>
+
+        <div class="summary-box threshold">
+          <div class="summary-label">Selected threshold</div>
+          <div class="summary-value" id="thresholdDisplay">80%</div>
+        </div>
+      </div>
+
+      <div class="chart-container">
+        <svg
+          id="paretoChart"
+          viewBox="0 0 1100 500"
+          role="img"
+          aria-label="Pareto chart"
+        ></svg>
+      </div>
+
+      <div class="legend">
+        <div class="legend-item">
+          <span class="legend-box" style="background:#ed7d31;"></span>
+          Vital few
+        </div>
+
+        <div class="legend-item">
+          <span class="legend-box" style="background:#2f75b5;"></span>
+          Remaining categories
+        </div>
+
+        <div class="legend-item">
+          <span class="legend-line" style="background:#548235;"></span>
+          Cumulative percentage
+        </div>
+
+        <div class="legend-item">
+          <span
+            class="legend-line"
+            style="border-top:2px dashed #c00000; height:0;"
+          ></span>
+          Selected threshold
+        </div>
+      </div>
+
+      <div class="interpretation" id="interpretation"></div>
+
+      <div class="warning">
+        <strong>Green Belt reminder:</strong> Pareto analysis identifies where to focus.
+        It does not prove root cause. Follow up with tools such as 5 Whys, a cause-and-effect
+        diagram, process mapping, or data stratification.
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>4. Ranked results</h2>
+
+      <div class="table-container">
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Issue category</th>
+              <th>Project phase</th>
+              <th id="resultMetricHeading">Impact</th>
+              <th>% of total</th>
+              <th>Cumulative %</th>
+              <th>Classification</th>
+            </tr>
+          </thead>
+          <tbody id="resultsBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>5. Vital-few action register</h2>
+      <p class="instructions">
+        Assign corrective actions to the priority categories identified by the analysis.
+      </p>
+
+      <div class="table-container">
+        <table class="action-table">
+          <thead>
+            <tr>
+              <th>Priority category</th>
+              <th>Root-cause investigation / corrective action</th>
+              <th>Owner</th>
+              <th>Due date</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="actionBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer>
+      Prototype for educational use — Six Sigma Green Belt / Project Management
+    </footer>
+  </main>
+
+  <script>
+    const sampleData = [
+      {
+        category: "Requirements changes",
+        phase: "Planning",
+        frequency: 18,
+        delay: 90,
+        cost: 12000,
+        severity: 4
+      },
+      {
+        category: "Resource unavailable",
+        phase: "Execution",
+        frequency: 12,
+        delay: 70,
+        cost: 8000,
+        severity: 4
+      },
+      {
+        category: "Vendor delays",
+        phase: "Procurement",
+        frequency: 8,
+        delay: 60,
+        cost: 10000,
+        severity: 3
+      },
+      {
+        category: "Rework and defects",
+        phase: "Execution",
+        frequency: 15,
+        delay: 45,
+        cost: 7500,
+        severity: 5
+      },
+      {
+        category: "Approval delays",
+        phase: "Monitoring",
+        frequency: 6,
+        delay: 35,
+        cost: 2000,
+        severity: 2
+      },
+      {
+        category: "Technical problems",
+        phase: "Execution",
+        frequency: 4,
+        delay: 25,
+        cost: 4000,
+        severity: 3
+      }
+    ];
+
+    let issueData = JSON.parse(JSON.stringify(sampleData));
+    let actionData = {};
+
+    const metricDefinitions = {
+      frequency: {
+        label: "Frequency",
+        unit: "occurrences",
+        getValue: row => numberValue(row.frequency)
+      },
+      delay: {
+        label: "Schedule delay",
+        unit: "hours",
+        getValue: row => numberValue(row.delay)
+      },
+      cost: {
+        label: "Cost impact",
+        unit: "dollars",
+        getValue: row => numberValue(row.cost)
+      },
+      severity: {
+        label: "Severity",
+        unit: "severity points",
+        getValue: row => numberValue(row.severity)
+      },
+      weighted: {
+        label: "Weighted impact",
+        unit: "points",
+        getValue: row =>
+          numberValue(row.frequency) * numberValue(row.severity)
+      }
+    };
+
+    const dataBody = document.getElementById("dataBody");
+    const resultsBody = document.getElementById("resultsBody");
+    const actionBody = document.getElementById("actionBody");
+    const metricSelector = document.getElementById("metricSelector");
+    const thresholdInput = document.getElementById("thresholdInput");
+
+    function numberValue(value) {
+      const result = Number(value);
+      return Number.isFinite(result) && result >= 0 ? result : 0;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function renderDataTable() {
+      dataBody.innerHTML = issueData.map((row, index) => `
+        <tr>
+          <td>
+            <input
+              class="category-input"
+              data-index="${index}"
+              data-field="category"
+              value="${escapeHtml(row.category)}"
+              aria-label="Issue category"
+            />
+          </td>
+
+          <td>
+            <input
+              class="phase-input"
+              data-index="${index}"
+              data-field="phase"
+              value="${escapeHtml(row.phase)}"
+              aria-label="Project phase"
+            />
+          </td>
+
+          <td>
+            <input
+              type="number"
+              min="0"
+              step="1"
+              data-index="${index}"
+              data-field="frequency"
+              value="${numberValue(row.frequency)}"
+              aria-label="Frequency"
+            />
+          </td>
+
+          <td>
+            <input
+              type="number"
+              min="0"
+              step="0.5"
+              data-index="${index}"
+              data-field="delay"
+              value="${numberValue(row.delay)}"
+              aria-label="Delay hours"
+            />
+          </td>
+
+          <td>
+            <input
+              type="number"
+              min="0"
+              step="1"
+              data-index="${index}"
+              data-field="cost"
+              value="${numberValue(row.cost)}"
+              aria-label="Cost impact"
+            />
+          </td>
+
+          <td>
+            <input
+              type="number"
+              min="1"
+              max="5"
+              step="1"
+              data-index="${index}"
+              data-field="severity"
+              value="${numberValue(row.severity)}"
+              aria-label="Severity"
+            />
+          </td>
+
+          <td>
+            <button
+              class="danger-button delete-row"
+              data-index="${index}"
+              aria-label="Delete ${escapeHtml(row.category)}"
+            >
+              Delete
+            </button>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    function analyzeData() {
+      const metricKey = metricSelector.value;
+      const metric = metricDefinitions[metricKey];
+
+      let threshold = numberValue(thresholdInput.value);
+      threshold = Math.min(100, Math.max(1, threshold || 80));
+
+      const validRows = issueData
+        .filter(row => String(row.category).trim() !== "")
+        .map(row => ({
+          ...row,
+          category: String(row.category).trim(),
+          phase: String(row.phase).trim(),
+          impact: metric.getValue(row)
+        }))
+        .sort((a, b) => b.impact - a.impact);
+
+      const total = validRows.reduce((sum, row) => sum + row.impact, 0);
+
+      let cumulativeValue = 0;
+      let thresholdReached = false;
+
+      const results = validRows.map((row, index) => {
+        const isVital = !thresholdReached;
+
+        cumulativeValue += row.impact;
+
+        const percent = total > 0
+          ? (row.impact / total) * 100
+          : 0;
+
+        const cumulativePercent = total > 0
+          ? (cumulativeValue / total) * 100
+          : 0;
+
+        if (cumulativePercent >= threshold) {
+          thresholdReached = true;
+        }
+
+        return {
+          ...row,
+          rank: index + 1,
+          percent,
+          cumulativePercent,
+          isVital: total > 0 ? isVital : false
+        };
+      });
+
+      return {
+        metricKey,
+        metric,
+        threshold,
+        total,
+        results,
+        vitalRows: results.filter(row => row.isVital)
+      };
+    }
+
+    function formatImpact(value, metricKey) {
+      if (metricKey === "cost") {
+        return new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency: "USD",
+          maximumFractionDigits: 0
+        }).format(value);
+      }
+
+      return new Intl.NumberFormat("en-US", {
+        maximumFractionDigits: 1
+      }).format(value);
+    }
+
+    function shortLabel(text, maximumLength = 22) {
+      const clean = String(text);
+      return clean.length > maximumLength
+        ? clean.substring(0, maximumLength - 1) + "…"
+        : clean;
+    }
+
+    function renderSummary(analysis) {
+      document.getElementById("totalImpact").textContent =
+        formatImpact(analysis.total, analysis.metricKey);
+
+      document.getElementById("categoryCount").textContent =
+        analysis.results.length;
+
+      document.getElementById("vitalCount").textContent =
+        analysis.vitalRows.length;
+
+      document.getElementById("thresholdDisplay").textContent =
+        `${analysis.threshold}%`;
+
+      document.getElementById("resultMetricHeading").textContent =
+        analysis.metric.label;
+    }
+
+    function renderResults(analysis) {
+      if (analysis.results.length === 0) {
+        resultsBody.innerHTML = `
+          <tr>
+            <td colspan="7" class="empty-message">
+              Enter at least one issue category to generate results.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      resultsBody.innerHTML = analysis.results.map(row => `
+        <tr class="${row.isVital ? "vital-row" : ""}">
+          <td>${row.rank}</td>
+          <td>${escapeHtml(row.category)}</td>
+          <td>${escapeHtml(row.phase || "Not specified")}</td>
+          <td>${formatImpact(row.impact, analysis.metricKey)}</td>
+          <td>${row.percent.toFixed(1)}%</td>
+          <td>${row.cumulativePercent.toFixed(1)}%</td>
+          <td>
+            ${
+              row.isVital
+                ? '<span class="badge vital-badge">Vital few</span>'
+                : '<span class="badge secondary-badge">Useful many</span>'
+            }
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    function renderInterpretation(analysis) {
+      const interpretation = document.getElementById("interpretation");
+
+      if (analysis.results.length === 0 || analysis.total === 0) {
+        interpretation.innerHTML = `
+          <strong>Interpretation:</strong>
+          Add issue categories with measurable impact values to perform the analysis.
+        `;
+        return;
+      }
+
+      const names = analysis.vitalRows
+        .map(row => `<strong>${escapeHtml(row.category)}</strong>`)
+        .join(", ");
+
+      const achieved = analysis.vitalRows.length
+        ? analysis.vitalRows[analysis.vitalRows.length - 1].cumulativePercent
+        : 0;
+
+      const proportion =
+        (analysis.vitalRows.length / analysis.results.length) * 100;
+
+      interpretation.innerHTML = `
+        <strong>Management interpretation:</strong>
+        ${analysis.vitalRows.length} of ${analysis.results.length}
+        issue categories—approximately ${proportion.toFixed(0)}% of all
+        categories—account for ${achieved.toFixed(1)}% of the measured
+        ${escapeHtml(analysis.metric.label.toLowerCase())}.
+        Initial root-cause analysis and corrective action should focus on:
+        ${names}.
+      `;
+    }
+
+    function renderChart(analysis) {
+      const svg = document.getElementById("paretoChart");
+
+      if (analysis.results.length === 0 || analysis.total === 0) {
+        svg.innerHTML = `
+          <rect width="1100" height="500" fill="#ffffff"></rect>
+          <text
+            x="550"
+            y="240"
+            text-anchor="middle"
+            font-size="22"
+            fill="#667085"
+          >
+            Enter measurable issue data to generate the Pareto chart.
+          </text>
+        `;
+        return;
+      }
+
+      const width = 1100;
+      const height = 500;
+      const left = 80;
+      const right = 75;
+      const top = 45;
+      const bottom = 145;
+      const chartWidth = width - left - right;
+      const chartHeight = height - top - bottom;
+
+      const rows = analysis.results;
+      const maxImpact = Math.max(...rows.map(row => row.impact), 1);
+      const slotWidth = chartWidth / rows.length;
+      const barWidth = Math.min(85, slotWidth * 0.62);
+
+      let content = `
+        <rect width="${width}" height="${height}" fill="#ffffff"></rect>
+
+        <text
+          x="${width / 2}"
+          y="24"
+          text-anchor="middle"
+          font-size="17"
+          font-weight="bold"
+          fill="#183153"
+        >
+          ${escapeHtml(analysis.metric.label)} Pareto Chart
+        </text>
+      `;
+
+      for (let percentage = 0; percentage <= 100; percentage += 20) {
+        const y = top + chartHeight - (percentage / 100) * chartHeight;
+
+        content += `
+          <line
+            x1="${left}"
+            y1="${y}"
+            x2="${width - right}"
+            y2="${y}"
+            stroke="#e4e7ec"
+            stroke-width="1"
+          ></line>
+
+          <text
+            x="${width - right + 10}"
+            y="${y + 4}"
+            font-size="12"
+            fill="#667085"
+          >
+            ${percentage}%
+          </text>
+        `;
+      }
+
+      for (let step = 0; step <= 5; step++) {
+        const value = (maxImpact / 5) * step;
+        const y = top + chartHeight - (step / 5) * chartHeight;
+
+        content += `
+          <text
+            x="${left - 10}"
+            y="${y + 4}"
+            text-anchor="end"
+            font-size="12"
+            fill="#667085"
+          >
+            ${escapeHtml(formatImpact(value, analysis.metricKey))}
+          </text>
+        `;
+      }
+
+      const thresholdY =
+        top + chartHeight - (analysis.threshold / 100) * chartHeight;
+
+      content += `
+        <line
+          x1="${left}"
+          y1="${thresholdY}"
+          x2="${width - right}"
+          y2="${thresholdY}"
+          stroke="#c00000"
+          stroke-width="2"
+          stroke-dasharray="8 6"
+        ></line>
+
+        <text
+          x="${left + 5}"
+          y="${thresholdY - 7}"
+          font-size="12"
+          font-weight="bold"
+          fill="#c00000"
+        >
+          ${analysis.threshold}% threshold
+        </text>
+
+        <line
+          x1="${left}"
+          y1="${top}"
+          x2="${left}"
+          y2="${top + chartHeight}"
+          stroke="#344054"
+          stroke-width="1.5"
+        ></line>
+
+        <line
+          x1="${left}"
+          y1="${top + chartHeight}"
+          x2="${width - right}"
+          y2="${top + chartHeight}"
+          stroke="#344054"
+          stroke-width="1.5"
+        ></line>
+      `;
+
+      const linePoints = [];
+
+      rows.forEach((row, index) => {
+        const centerX = left + slotWidth * index + slotWidth / 2;
+        const barHeight = (row.impact / maxImpact) * chartHeight;
+        const barX = centerX - barWidth / 2;
+        const barY = top + chartHeight - barHeight;
+        const lineY =
+          top + chartHeight - (row.cumulativePercent / 100) * chartHeight;
+
+        linePoints.push(`${centerX},${lineY}`);
+
+        content += `
+          <rect
+            x="${barX}"
+            y="${barY}"
+            width="${barWidth}"
+            height="${barHeight}"
+            rx="2"
+            fill="${row.isVital ? "#ed7d31" : "#2f75b5"}"
+          >
+            <title>
+              ${escapeHtml(row.category)}:
+              ${escapeHtml(formatImpact(row.impact, analysis.metricKey))}
+              (${row.percent.toFixed(1)}% of total)
+            </title>
+          </rect>
+
+          <text
+            x="${centerX}"
+            y="${Math.max(top + 13, barY - 7)}"
+            text-anchor="middle"
+            font-size="11"
+            font-weight="bold"
+            fill="#344054"
+          >
+            ${escapeHtml(formatImpact(row.impact, analysis.metricKey))}
+          </text>
+
+          <text
+            x="${centerX - 5}"
+            y="${top + chartHeight + 20}"
+            transform="rotate(38 ${centerX - 5} ${top + chartHeight + 20})"
+            text-anchor="start"
+            font-size="12"
+            fill="#344054"
+          >
+            ${escapeHtml(shortLabel(row.category))}
+          </text>
+        `;
+      });
+
+      content += `
+        <polyline
+          points="${linePoints.join(" ")}"
+          fill="none"
+          stroke="#548235"
+          stroke-width="3"
+        ></polyline>
+      `;
+
+      rows.forEach((row, index) => {
+        const centerX = left + slotWidth * index + slotWidth / 2;
+        const lineY =
+          top + chartHeight - (row.cumulativePercent / 100) * chartHeight;
+
+        content += `
+          <circle
+            cx="${centerX}"
+            cy="${lineY}"
+            r="5"
+            fill="#548235"
+            stroke="#ffffff"
+            stroke-width="2"
+          >
+            <title>
+              Cumulative percentage: ${row.cumulativePercent.toFixed(1)}%
+            </title>
+          </circle>
+        `;
+      });
+
+      content += `
+        <text
+          x="18"
+          y="${top + chartHeight / 2}"
+          transform="rotate(-90 18 ${top + chartHeight / 2})"
+          text-anchor="middle"
+          font-size="13"
+          font-weight="bold"
+          fill="#344054"
+        >
+          ${escapeHtml(analysis.metric.label)}
+        </text>
+
+        <text
+          x="${width - 15}"
+          y="${top + chartHeight / 2}"
+          transform="rotate(90 ${width - 15} ${top + chartHeight / 2})"
+          text-anchor="middle"
+          font-size="13"
+          font-weight="bold"
+          fill="#344054"
+        >
+          Cumulative percentage
+        </text>
+      `;
+
+      svg.innerHTML = content;
+    }
+
+    function saveCurrentActions() {
+      document.querySelectorAll("#actionBody tr[data-category]").forEach(row => {
+        const category = row.dataset.category;
+
+        actionData[category] = {
+          action: row.querySelector('[data-action-field="action"]')?.value || "",
+          owner: row.querySelector('[data-action-field="owner"]')?.value || "",
+          dueDate: row.querySelector('[data-action-field="dueDate"]')?.value || "",
+          status: row.querySelector('[data-action-field="status"]')?.value || "Not started"
+        };
+      });
+    }
+
+    function renderActions(analysis) {
+      saveCurrentActions();
+
+      if (analysis.vitalRows.length === 0) {
+        actionBody.innerHTML = `
+          <tr>
+            <td colspan="5" class="empty-message">
+              Vital-few categories will appear here after the analysis is generated.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      actionBody.innerHTML = analysis.vitalRows.map(row => {
+        const saved = actionData[row.category] || {
+          action: "",
+          owner: "",
+          dueDate: "",
+          status: "Not started"
+        };
+
+        return `
+          <tr data-category="${escapeHtml(row.category)}">
+            <td>
+              <strong>${escapeHtml(row.category)}</strong><br />
+              <span style="color:#667085; font-size:12px;">
+                ${row.cumulativePercent.toFixed(1)}% cumulative
+              </span>
+            </td>
+
+            <td>
+              <textarea
+                data-action-field="action"
+                placeholder="Example: Conduct 5 Whys and implement change-control checklist"
+              >${escapeHtml(saved.action)}</textarea>
+            </td>
+
+            <td>
+              <input
+                data-action-field="owner"
+                value="${escapeHtml(saved.owner)}"
+                placeholder="Action owner"
+              />
+            </td>
+
+            <td>
+              <input
+                type="date"
+                data-action-field="dueDate"
+                value="${escapeHtml(saved.dueDate)}"
+              />
+            </td>
+
+            <td>
+              <select data-action-field="status">
+                ${["Not started", "In progress", "Blocked", "Complete"]
+                  .map(status => `
+                    <option
+                      value="${status}"
+                      ${saved.status === status ? "selected" : ""}
+                    >
+                      ${status}
+                    </option>
+                  `).join("")}
+              </select>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function renderAnalysis() {
+      const analysis = analyzeData();
+
+      renderSummary(analysis);
+      renderChart(analysis);
+      renderInterpretation(analysis);
+      renderResults(analysis);
+      renderActions(analysis);
+    }
+
+    function renderAll() {
+      renderDataTable();
+      renderAnalysis();
+    }
+
+    dataBody.addEventListener("input", event => {
+      const input = event.target;
+
+      if (!input.dataset.field) return;
+
+      const index = Number(input.dataset.index);
+      const field = input.dataset.field;
+
+      if (["frequency", "delay", "cost", "severity"].includes(field)) {
+        issueData[index][field] = numberValue(input.value);
+      } else {
+        issueData[index][field] = input.value;
+      }
+
+      renderAnalysis();
+    });
+
+    dataBody.addEventListener("click", event => {
+      const button = event.target.closest(".delete-row");
+
+      if (!button) return;
+
+      const index = Number(button.dataset.index);
+      issueData.splice(index, 1);
+
+      renderAll();
+    });
+
+    document.getElementById("addRowButton").addEventListener("click", () => {
+      issueData.push({
+        category: "New issue category",
+        phase: "",
+        frequency: 0,
+        delay: 0,
+        cost: 0,
+        severity: 1
+      });
+
+      renderAll();
+    });
+
+    document.getElementById("resetButton").addEventListener("click", () => {
+      issueData = JSON.parse(JSON.stringify(sampleData));
+      actionData = {};
+
+      document.getElementById("problemStatement").value =
+        "What is causing the greatest amount of project schedule delay?";
+
+      metricSelector.value = "delay";
+      thresholdInput.value = 80;
+
+      renderAll();
+    });
+
+    metricSelector.addEventListener("change", renderAnalysis);
+    thresholdInput.addEventListener("input", renderAnalysis);
+
+    actionBody.addEventListener("input", saveCurrentActions);
+    actionBody.addEventListener("change", saveCurrentActions);
+
+    renderAll();
+  </script>
+</body>
+</html>
